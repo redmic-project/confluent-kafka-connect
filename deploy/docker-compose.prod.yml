@@ -1,7 +1,7 @@
 version: '3.5'
 
 services:
-  connect:
+  kafka-connect:
     deploy:
       placement:
         constraints:
