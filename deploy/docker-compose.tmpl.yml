@@ -29,7 +29,6 @@ services:
       KAFKA_HEAP_OPTS:
     networks:
       kafka-net:
-      postgres-vessel-net:
       postgres-net:
       elastic-net:
     volumes:
