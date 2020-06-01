@@ -1,0 +1,84 @@
+version: '3.5'
+
+services:
+  kafka-connect:
+    image: ${IMAGE_NAME:-confluentinc/cp-kafka-connect}:${IMAGE_TAG:-latest}
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      CONNECT_ZOOKEEPER_CONNECT: zk-1:${ZK_PORT},zk-2:${ZK_PORT},zk-3:${ZK_PORT}
+      CONNECT_BOOTSTRAP_SERVERS: kf-1:${KF_PORT},kf-2:${KF_PORT},kf-3:${KF_PORT}
+      CONNECT_REST_PORT: ${CN_PORT}
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:${SR_PORT}'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:${SR_PORT}'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: ${LOG_LEVEL}
+      CONNECT_HOST:
+      CONNECT_REST_ADVERTISED_HOST_NAME:
+      CONNECT_GROUP_ID:
+      CONNECT_CONFIG_STORAGE_TOPIC:
+      CONNECT_OFFSET_STORAGE_TOPIC:
+      CONNECT_STATUS_STORAGE_TOPIC:
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR:
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR:
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR:
+      CONNECT_KEY_CONVERTER:
+      CONNECT_VALUE_CONVERTER:
+      CONNECT_INTERNAL_KEY_CONVERTER:
+      CONNECT_INTERNAL_VALUE_CONVERTER:
+      CONNECT_PLUGIN_PATH:
+      KAFKA_HEAP_OPTS:
+    networks:
+      kafka-net:
+      postgres-net:
+      elastic-net:
+    volumes:
+      - kafka-secrets-vol:/etc/kafka/secrets
+      - connect-secrets-vol:/etc/kafka-connect/secrets
+      - jars-vol:/etc/kafka-connect/jars
+      - data-vol:/var/lib/kafka/data
+    healthcheck:
+      test: curl --silent http://localhost:${CN_PORT}/connectors
+      interval: ${HEALTHCHECK_INTERVAL:-30s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-30s}
+      retries: ${HEALTHCHECK_RETRIES:-10}
+      start_period: ${HEALTHCHECK_START_PERIOD:-5m}
+    deploy:
+      mode: replicated
+      replicas: ${REPLICAS:-1}
+      restart_policy:
+        delay: ${RESTART_DELAY:-30s}
+      update_config:
+        delay: ${UPDATE_DELAY:-1m}
+      resources:
+        limits:
+          cpus: '${RESOURCES_LIMITS_CPUS:-1}'
+          memory: ${RESOURCES_LIMITS_MEMORY:-1G}
+        reservations:
+          cpus: '${RESOURCES_RESERVATIONS_CPUS:-0.001}'
+          memory: ${RESOURCES_RESERVATIONS_MEMORY:-820M}
+
+networks:
+  kafka-net:
+    name: ${KAFKA_NET_NAME:-kafka-net}
+    driver: ${KAFKA_NET_DRIVER:-overlay}
+    external: true
+
+  postgres-net:
+    name: ${POSTGRES_NET_NAME:-postgres-net}
+    driver: ${POSTGRES_NET_DRIVER:-overlay}
+    external: true
+
+  elastic-net:
+    name: ${ELASTIC_NET_NAME:-elastic6-net}
+    driver: ${ELASTIC_NET_DRIVER:-overlay}
+    external: true
+
+volumes:
+  kafka-secrets-vol:
+    name: ${CONNECT_KAFKA_SECRETS_VOL_NAME:-connect-kafka-secrets-vol}
+
+  connect-secrets-vol:
+    name: ${CONNECT_SECRETS_VOL_NAME:-connect-connect-secrets-vol}
+
+  data-vol:
+    name: ${CONNECT_DATA_VOL_NAME:-connect-data-vol}
